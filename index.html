@@ -103,10 +103,16 @@
                 console.log('Fetching processes from:', `${API_URL}/list_processes`);
                 const response = await fetch(`${API_URL}/list_processes`, {
                     method: 'GET',
-                    headers: { 'Content-Type': 'application/json' }
+                    headers: { 'Content-Type': 'application/json' },
+                    mode: 'cors'
                 });
+                console.log('Response status:', response.status);
+                console.log('Response headers:', [...response.headers.entries()]);
                 const text = await response.text();
                 console.log('Raw response:', text);
+                if (!response.ok) {
+                    throw new Error(`HTTP error ${response.status}: ${text}`);
+                }
                 const data = JSON.parse(text);
                 if (data.status === 'success') {
                     const processSelect = document.getElementById('processSelect');
@@ -129,7 +135,8 @@
             try {
                 const response = await fetch(`${API_URL}/${action}`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' }
+                    headers: { 'Content-Type': 'application/json' },
+                    mode: 'cors'
                 });
                 const data = await response.json();
                 displayResponse(data);
@@ -148,7 +155,8 @@
                 const response = await fetch(`${API_URL}/open_app`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ app_name: appName })
+                    body: JSON.stringify({ app_name: appName }),
+                    mode: 'cors'
                 });
                 const data = await response.json();
                 displayResponse(data);
@@ -167,7 +175,8 @@
                 const response = await fetch(`${API_URL}/type`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ text })
+                    body: JSON.stringify({ text }),
+                    mode: 'cors'
                 });
                 const data = await response.json();
                 displayResponse(data);
@@ -188,7 +197,8 @@
                 const response = await fetch(`${API_URL}/kill_process`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ process_name: processName })
+                    body: JSON.stringify({ process_name: processName }),
+                    mode: 'cors'
                 });
                 const data = await response.json();
                 displayResponse(data);
