@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PC Control</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        button, input {
+            margin: 10px;
+            padding: 10px;
+            font-size: 16px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        input {
+            width: 200px;
+        }
+        #response {
+            margin-top: 20px;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <h1>PC Control Panel</h1>
+    <button onclick="sendCommand('shutdown')">Shutdown</button>
+    <button onclick="sendCommand('restart')">Restart</button>
+    <input id="appInput" type="text" placeholder="Enter app name">
+    <button onclick="openApp()">Open App</button>
+    <input id="textInput" type="text" placeholder="Enter text to type">
+    <button onclick="typeText()">Type Text</button>
+    <div id="response"></div>
+
+    <script>
+        const API_URL = 'https://game-bluebird-largely.ngrok-free.app';
+
+        async function sendCommand(action) {
+            try {
+                const response = await fetch(`${API_URL}/${action}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                const data = await response.json();
+                displayResponse(data);
+            } catch (error) {
+                displayResponse({ status: 'error', message: error.message });
+            }
+        }
+
+        async function openApp() {
+            const appName = document.getElementById('appInput').value;
+            if (!appName) {
+                displayResponse({ status: 'error', message: 'Please enter an app name' });
+                return;
+            }
+            try {
+                const response = await fetch(`${API_URL}/open_app`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ app_name: appName })
+                });
+                const data = await response.json();
+                displayResponse(data);
+            } catch (error) {
+                displayResponse({ status: 'error', message: error.message });
+            }
+        }
+
+        async function typeText() {
+            const text = document.getElementById('textInput').value;
+            if (!text) {
+                displayResponse({ status: 'error', message: 'Please enter text' });
+                return;
+            }
+            try {
+                const response = await fetch(`${API_URL}/type`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text })
+                });
+                const data = await response.json();
+                displayResponse(data);
+            } catch (error) {
+                displayResponse({ status: 'error', message: error.message });
+            }
+        }
+
+        function displayResponse(data) {
+            const responseDiv = document.getElementById('response');
+            responseDiv.textContent = data.message;
+            responseDiv.style.color = data.status === 'success' ? 'green' : 'red';
+        }
+    </script>
+</body>
+</html>
