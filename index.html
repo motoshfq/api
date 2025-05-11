@@ -92,30 +92,42 @@
         </select>
         <input id="processInput" type="text" placeholder="Or enter process name (e.g., notepad.exe)">
         <button onclick="killProcess()">Kill Process</button>
+        <button onclick="refreshProcesses()">Refresh Process List</button>
         <div id="response"></div>
     </div>
 
     <script>
         const API_URL = 'https://game-bluebird-largely.ngrok-free.app';
 
-        window.onload = async () => {
+        window.onload = () => {
+            refreshProcesses();
+        };
+
+        async function refreshProcesses() {
             try {
+                displayResponse({ status: 'info', message: 'Loading processes...' });
                 console.log('Fetching processes from:', `${API_URL}/list_processes`);
                 const response = await fetch(`${API_URL}/list_processes`, {
                     method: 'GET',
                     headers: { 'Content-Type': 'application/json' },
                     mode: 'cors'
                 });
+                
                 console.log('Response status:', response.status);
-                console.log('Response headers:', [...response.headers.entries()]);
-                const text = await response.text();
-                console.log('Raw response (first 500 chars):', text.substring(0, 500));
+                
                 if (!response.ok) {
-                    throw new Error(`HTTP error ${response.status}: ${text.substring(0, 200)}`);
+                    const errorText = await response.text();
+                    throw new Error(`HTTP error ${response.status}: ${errorText}`);
                 }
-                const data = JSON.parse(text);
+                
+                const data = await response.json();
                 if (data.status === 'success') {
                     const processSelect = document.getElementById('processSelect');
+                    // Очищаем текущие опции, оставляя только первую
+                    while (processSelect.options.length > 1) {
+                        processSelect.remove(1);
+                    }
+                    
                     data.processes.forEach(process => {
                         if (process) { // Исключаем пустые имена
                             const option = document.createElement('option');
@@ -124,6 +136,7 @@
                             processSelect.appendChild(option);
                         }
                     });
+                    displayResponse({ status: 'success', message: 'Processes loaded successfully' });
                 } else {
                     displayResponse({ status: 'error', message: data.message });
                 }
@@ -131,7 +144,7 @@
                 displayResponse({ status: 'error', message: 'Failed to load processes: ' + error.message });
                 console.error('Error details:', error);
             }
-        };
+        }
 
         async function sendCommand(action) {
             try {
@@ -140,6 +153,12 @@
                     headers: { 'Content-Type': 'application/json' },
                     mode: 'cors'
                 });
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`HTTP error ${response.status}: ${errorText}`);
+                }
+                
                 const data = await response.json();
                 displayResponse(data);
             } catch (error) {
@@ -160,6 +179,12 @@
                     body: JSON.stringify({ app_name: appName }),
                     mode: 'cors'
                 });
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`HTTP error ${response.status}: ${errorText}`);
+                }
+                
                 const data = await response.json();
                 displayResponse(data);
             } catch (error) {
@@ -180,6 +205,12 @@
                     body: JSON.stringify({ text }),
                     mode: 'cors'
                 });
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`HTTP error ${response.status}: ${errorText}`);
+                }
+                
                 const data = await response.json();
                 displayResponse(data);
             } catch (error) {
@@ -203,8 +234,18 @@
                     body: JSON.stringify({ process_name: processName }),
                     mode: 'cors'
                 });
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`HTTP error ${response.status}: ${errorText}`);
+                }
+                
                 const data = await response.json();
                 displayResponse(data);
+                // Обновляем список процессов после успешного завершения
+                if (data.status === 'success') {
+                    setTimeout(refreshProcesses, 1000);
+                }
             } catch (error) {
                 displayResponse({ status: 'error', message: error.message });
             }
@@ -213,7 +254,14 @@
         function displayResponse(data) {
             const responseDiv = document.getElementById('response');
             responseDiv.textContent = data.message;
-            responseDiv.style.color = data.status === 'success' ? '#28a745' : '#dc3545';
+            
+            if (data.status === 'success') {
+                responseDiv.style.color = '#28a745';
+            } else if (data.status === 'error') {
+                responseDiv.style.color = '#dc3545';
+            } else if (data.status === 'info') {
+                responseDiv.style.color = '#007bff';
+            }
         }
     </script>
 </body>
