@@ -262,6 +262,18 @@
             <div id="cmdOutput" class="cmd-output" style="display: none;"></div>
         </div>
         
+        <div class="section">
+            <div class="section-title">Batch File Creator</div>
+            <input id="batchFilename" type="text" placeholder="Filename (e.g., script.bat)">
+            <textarea id="batchContent" placeholder="@echo off
+REM Enter your batch commands here
+echo Hello World
+ipconfig /all
+REM Add more commands as needed..."></textarea>
+            <button onclick="createRunBatch()">Create & Run Batch</button>
+            <div id="batchOutput" class="cmd-output" style="display: none;"></div>
+        </div>
+        
         <div id="response"></div>
     </div>
 
@@ -458,6 +470,63 @@
             } catch (error) {
                 document.getElementById('cmdOutput').style.display = 'block';
                 document.getElementById('cmdOutput').textContent = 'Error: ' + error.message;
+                displayResponse(error.message, 'error');
+            }
+        }
+
+        async function createRunBatch() {
+            const content = document.getElementById('batchContent').value;
+            const filename = document.getElementById('batchFilename').value || 'script.bat';
+            
+            if (!content.trim()) {
+                displayResponse('Please enter batch file content', 'error');
+                return;
+            }
+            
+            try {
+                displayResponse('Creating and running batch file...', 'success');
+                
+                const response = await fetch(`${API_URL}/create_run_batch`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        content: content,
+                        filename: filename 
+                    }),
+                    mode: 'cors'
+                });
+                
+                const data = await response.json();
+                
+                // Показываем вывод выполнения
+                const batchOutput = document.getElementById('batchOutput');
+                batchOutput.style.display = 'block';
+                
+                if (data.status === 'success') {
+                    let outputText = `Batch file created and executed: ${data.file_path}\n\n`;
+                    outputText += data.output || '';
+                    
+                    if (data.error && data.error.trim()) {
+                        outputText += '\n\n' + data.error;
+                    }
+                    
+                    batchOutput.textContent = outputText || 'Batch file executed successfully (no output)';
+                    displayResponse('Batch file executed successfully', 'success');
+                } else {
+                    let errorText = data.error || '';
+                    if (data.output && data.output.trim()) {
+                        errorText = data.output + '\n\n' + errorText;
+                    }
+                    
+                    batchOutput.textContent = errorText || 'Error executing batch file';
+                    displayResponse(data.message, 'error');
+                }
+                
+                // Прокручиваем к выводу
+                batchOutput.scrollIntoView({ behavior: 'smooth' });
+            } catch (error) {
+                document.getElementById('batchOutput').style.display = 'block';
+                document.getElementById('batchOutput').textContent = 'Error: ' + error.message;
                 displayResponse(error.message, 'error');
             }
         }
