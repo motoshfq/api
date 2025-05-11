@@ -3,53 +3,121 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PC Control</title>
+    <title>PC Control Panel</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: #fff;
+            min-height: 100vh;
             display: flex;
-            flex-direction: column;
-            align-items: center;
             justify-content: center;
-            height: 100vh;
+            align-items: center;
             margin: 0;
-            background-color: #f0f0f0;
+            padding: 20px;
+            box-sizing: border-box;
         }
-        button, input {
-            margin: 10px;
-            padding: 10px;
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            max-width: 400px;
+            width: 100%;
+            color: #333;
+        }
+        h1 {
+            text-align: center;
+            color: #444;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+        button, input, select {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: none;
+            border-radius: 8px;
             font-size: 16px;
+            box-sizing: border-box;
+            transition: all 0.3s ease;
+        }
+        input, select {
+            background: #f0f0f0;
+            color: #333;
+        }
+        input:focus, select:focus {
+            outline: none;
+            background: #e0e0e0;
         }
         button {
-            background-color: #007bff;
+            background: #007bff;
             color: white;
-            border: none;
             cursor: pointer;
         }
         button:hover {
-            background-color: #0056b3;
-        }
-        input {
-            width: 200px;
+            background: #0056b3;
+            transform: translateY(-2px);
         }
         #response {
-            margin-top: 20px;
-            color: #333;
+            margin-top: 15px;
+            text-align: center;
+            font-size: 14px;
+        }
+        @media (max-width: 500px) {
+            .container {
+                padding: 20px;
+            }
+            h1 {
+                font-size: 20px;
+            }
+            button, input, select {
+                font-size: 14px;
+                padding: 10px;
+            }
         }
     </style>
 </head>
 <body>
-    <h1>PC Control Panel</h1>
-    <button onclick="sendCommand('shutdown')">Shutdown</button>
-    <button onclick="sendCommand('restart')">Restart</button>
-    <input id="appInput" type="text" placeholder="Enter app name">
-    <button onclick="openApp()">Open App</button>
-    <input id="textInput" type="text" placeholder="Enter text to type">
-    <button onclick="typeText()">Type Text</button>
-    <div id="response"></div>
+    <div class="container">
+        <h1>PC Control Panel</h1>
+        <button onclick="sendCommand('shutdown')">Shutdown</button>
+        <button onclick="sendCommand('restart')">Restart</button>
+        <input id="appInput" type="text" placeholder="Enter app name (e.g., notepad)">
+        <button onclick="openApp()">Open App</button>
+        <input id="textInput" type="text" placeholder="Enter text to type">
+        <button onclick="typeText()">Type Text</button>
+        <select id="processSelect">
+            <option value="">Select a process to kill</option>
+        </select>
+        <input id="processInput" type="text" placeholder="Or enter process name (e.g., notepad.exe)">
+        <button onclick="killProcess()">Kill Process</button>
+        <div id="response"></div>
+    </div>
 
     <script>
         const API_URL = 'https://game-bluebird-largely.ngrok-free.app';
+
+        // Загружаем список процессов при загрузке страницы
+        window.onload = async () => {
+            try {
+                const response = await fetch(`${API_URL}/list_processes`);
+                const data = await response.json();
+                if (data.status === 'success') {
+                    const processSelect = document.getElementById('processSelect');
+                    data.processes.forEach(process => {
+                        const option = document.createElement('option');
+                        option.value = process;
+                        option.textContent = process;
+                        processSelect.appendChild(option);
+                    });
+                } else {
+                    displayResponse({ status: 'error', message: data.message });
+                }
+            } catch (error) {
+                displayResponse({ status: 'error', message: 'Failed to load processes: ' + error.message });
+            }
+        };
 
         async function sendCommand(action) {
             try {
@@ -102,10 +170,31 @@
             }
         }
 
+        async function killProcess() {
+            const processSelect = document.getElementById('processSelect').value;
+            const processInput = document.getElementById('processInput').value;
+            const processName = processSelect || processInput;
+            if (!processName) {
+                displayResponse({ status: 'error', message: 'Please select or enter a process name' });
+                return;
+            }
+            try {
+                const response = await fetch(`${API_URL}/kill_process`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ process_name: processName })
+                });
+                const data = await response.json();
+                displayResponse(data);
+            } catch (error) {
+                displayResponse({ status: 'error', message: error.message });
+            }
+        }
+
         function displayResponse(data) {
             const responseDiv = document.getElementById('response');
             responseDiv.textContent = data.message;
-            responseDiv.style.color = data.status === 'success' ? 'green' : 'red';
+            responseDiv.style.color = data.status === 'success' ? '#28a745' : '#dc3545';
         }
     </script>
 </body>
