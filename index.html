@@ -3,120 +3,235 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PC Control Panel</title>
+    <title>PC Remote Control Panel</title>
     <style>
+        :root {
+            --bg-gradient-start: #1a237e;
+            --bg-gradient-end: #283593;
+            --panel-bg: rgba(15, 17, 26, 0.95);
+            --section-bg: rgba(30, 33, 43, 0.8);
+            --text-color: #e0e0e0;
+            --accent-color: #2979ff;
+            --accent-hover: #448aff;
+            --success-color: #00c853;
+            --error-color: #ff1744;
+            --border-radius: 12px;
+            --input-bg: rgba(45, 48, 58, 0.8);
+            --border-color: rgba(79, 89, 107, 0.6);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
         body {
             font-family: 'Segoe UI', Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            color: #fff;
+            background: linear-gradient(135deg, var(--bg-gradient-start), var(--bg-gradient-end));
+            color: var(--text-color);
             min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
             margin: 0;
             padding: 20px;
-            box-sizing: border-box;
         }
+
         .container {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 15px;
-            padding: 30px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-            max-width: 500px;
+            background: var(--panel-bg);
+            border-radius: var(--border-radius);
+            padding: 25px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            max-width: 700px;
             width: 100%;
-            color: #333;
+            border: 1px solid var(--border-color);
         }
+
         h1 {
             text-align: center;
-            color: #444;
-            margin-bottom: 20px;
-            font-size: 24px;
+            margin-bottom: 25px;
+            font-size: 28px;
+            color: var(--accent-color);
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            letter-spacing: 1px;
         }
+
         button, input, select, textarea {
             width: 100%;
-            padding: 12px;
-            margin: 10px 0;
-            border: none;
+            padding: 12px 15px;
+            margin: 8px 0;
+            border: 1px solid var(--border-color);
             border-radius: 8px;
-            font-size: 16px;
-            box-sizing: border-box;
+            font-size: 15px;
+            background: var(--input-bg);
+            color: var(--text-color);
             transition: all 0.3s ease;
         }
-        input, select, textarea {
-            background: #f0f0f0;
-            color: #333;
-        }
+
         textarea {
             min-height: 120px;
-            font-family: 'Consolas', monospace;
+            font-family: 'Consolas', 'Monaco', monospace;
             resize: vertical;
+            line-height: 1.4;
         }
+
         input:focus, select:focus, textarea:focus {
             outline: none;
-            background: #e0e0e0;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 2px rgba(41, 121, 255, 0.3);
         }
+
         button {
-            background: #007bff;
+            background: var(--accent-color);
             color: white;
             cursor: pointer;
+            border: none;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
+
         button:hover {
-            background: #0056b3;
+            background: var(--accent-hover);
             transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
         }
-        #response {
-            margin-top: 15px;
-            text-align: center;
-            font-size: 14px;
+
+        button:active {
+            transform: translateY(0);
         }
+
         .section {
-            margin-bottom: 20px;
-            padding-bottom: 20px;
-            border-bottom: 1px solid #ddd;
+            margin-bottom: 25px;
+            padding: 20px;
+            border-radius: var(--border-radius);
+            background: var(--section-bg);
+            border: 1px solid var(--border-color);
         }
+
         .section:last-child {
-            border-bottom: none;
+            margin-bottom: 0;
         }
+
         .section-title {
             font-size: 18px;
-            color: #444;
-            margin: 10px 0;
+            color: var(--accent-color);
+            margin-bottom: 15px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
         }
+        
+        .section-title::before {
+            content: '•';
+            margin-right: 8px;
+            color: var(--accent-color);
+            font-size: 24px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        .button-group button {
+            flex: 1;
+        }
+
         .cmd-output {
             background-color: #000;
-            color: #0f0;
-            padding: 10px;
-            border-radius: 5px;
-            font-family: 'Consolas', monospace;
-            max-height: 150px;
+            color: #00ff00;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            max-height: 250px;
             overflow-y: auto;
             white-space: pre-wrap;
-            word-break: break-all;
-            margin-top: 10px;
-            display: none;
+            word-break: break-word;
+            margin-top: 15px;
+            border: 1px solid #333;
+            font-size: 14px;
+            line-height: 1.5;
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
         }
-        @media (max-width: 500px) {
+
+        #response {
+            padding: 15px;
+            margin-top: 20px;
+            text-align: center;
+            font-weight: 500;
+            border-radius: var(--border-radius);
+            background: var(--section-bg);
+            transition: all 0.3s ease;
+        }
+
+        .success {
+            color: var(--success-color);
+        }
+
+        .error {
+            color: var(--error-color);
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #111;
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--accent-color);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--accent-hover);
+        }
+
+        @media (max-width: 600px) {
             .container {
-                padding: 20px;
+                padding: 15px;
             }
+            
             h1 {
-                font-size: 20px;
+                font-size: 22px;
+                margin-bottom: 15px;
             }
+            
+            .section {
+                padding: 15px;
+                margin-bottom: 15px;
+            }
+            
             button, input, select, textarea {
                 font-size: 14px;
                 padding: 10px;
+            }
+            
+            .button-group {
+                flex-direction: column;
+                gap: 8px;
             }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>PC Control Panel</h1>
+        <h1>PC Remote Control Panel</h1>
         
         <div class="section">
             <div class="section-title">Power Management</div>
-            <button onclick="sendCommand('shutdown')">Shutdown</button>
-            <button onclick="sendCommand('restart')">Restart</button>
+            <div class="button-group">
+                <button onclick="sendCommand('shutdown')">Shutdown</button>
+                <button onclick="sendCommand('restart')">Restart</button>
+            </div>
         </div>
         
         <div class="section">
@@ -144,7 +259,7 @@
             <div class="section-title">Command Prompt</div>
             <textarea id="cmdInput" placeholder="Enter cmd command (e.g., dir, ipconfig, etc.)"></textarea>
             <button onclick="executeCommand()">Execute Command</button>
-            <div id="cmdOutput" class="cmd-output"></div>
+            <div id="cmdOutput" class="cmd-output" style="display: none;"></div>
         </div>
         
         <div id="response"></div>
@@ -164,15 +279,13 @@
                     },
                     mode: 'cors'
                 });
-                console.log('Ping status:', response.status);
-                console.log('Ping headers:', [...response.headers.entries()]);
-                const text = await response.text();
-                console.log('Ping response (first 1000 chars):', text.substring(0, 1000));
+                
                 if (!response.ok) {
+                    const text = await response.text();
                     throw new Error(`Ping failed with status ${response.status}: ${text.substring(0, 200)}`);
                 }
-                const data = JSON.parse(text);
-                console.log('Ping result:', data);
+                
+                const data = await response.json();
                 return data.status === 'success';
             } catch (error) {
                 console.error('Ping error:', error);
@@ -181,15 +294,14 @@
         }
 
         window.onload = async () => {
-            // Сначала проверяем сервер
+            // Проверяем сервер
             const serverAlive = await checkServer();
             if (!serverAlive) {
-                displayResponse({ status: 'error', message: 'Server connection failed' });
+                displayResponse('Server connection failed', 'error');
                 return;
             }
 
             try {
-                console.log('Fetching processes from:', `${API_URL}/list_processes`);
                 const response = await fetch(`${API_URL}/list_processes`, {
                     method: 'GET',
                     headers: {
@@ -198,14 +310,13 @@
                     },
                     mode: 'cors'
                 });
-                console.log('List processes status:', response.status);
-                console.log('List processes headers:', [...response.headers.entries()]);
-                const text = await response.text();
-                console.log('List processes response (first 1000 chars):', text.substring(0, 1000));
+                
                 if (!response.ok) {
+                    const text = await response.text();
                     throw new Error(`HTTP error ${response.status}: ${text.substring(0, 200)}`);
                 }
-                const data = JSON.parse(text);
+                
+                const data = await response.json();
                 if (data.status === 'success') {
                     const processSelect = document.getElementById('processSelect');
                     data.processes.forEach(process => {
@@ -217,10 +328,10 @@
                         }
                     });
                 } else {
-                    displayResponse({ status: 'error', message: data.message });
+                    displayResponse(data.message, 'error');
                 }
             } catch (error) {
-                displayResponse({ status: 'error', message: 'Failed to load processes: ' + error.message });
+                displayResponse('Failed to load processes: ' + error.message, 'error');
                 console.error('Error details:', error);
             }
         };
@@ -233,18 +344,19 @@
                     mode: 'cors'
                 });
                 const data = await response.json();
-                displayResponse(data);
+                displayResponse(data.message, data.status === 'success' ? 'success' : 'error');
             } catch (error) {
-                displayResponse({ status: 'error', message: error.message });
+                displayResponse(error.message, 'error');
             }
         }
 
         async function openApp() {
             const appName = document.getElementById('appInput').value;
             if (!appName) {
-                displayResponse({ status: 'error', message: 'Please enter an app name' });
+                displayResponse('Please enter an app name', 'error');
                 return;
             }
+            
             try {
                 const response = await fetch(`${API_URL}/open_app`, {
                     method: 'POST',
@@ -253,18 +365,19 @@
                     mode: 'cors'
                 });
                 const data = await response.json();
-                displayResponse(data);
+                displayResponse(data.message, data.status === 'success' ? 'success' : 'error');
             } catch (error) {
-                displayResponse({ status: 'error', message: error.message });
+                displayResponse(error.message, 'error');
             }
         }
 
         async function typeText() {
             const text = document.getElementById('textInput').value;
             if (!text) {
-                displayResponse({ status: 'error', message: 'Please enter text' });
+                displayResponse('Please enter text', 'error');
                 return;
             }
+            
             try {
                 const response = await fetch(`${API_URL}/type`, {
                     method: 'POST',
@@ -273,9 +386,9 @@
                     mode: 'cors'
                 });
                 const data = await response.json();
-                displayResponse(data);
+                displayResponse(data.message, data.status === 'success' ? 'success' : 'error');
             } catch (error) {
-                displayResponse({ status: 'error', message: error.message });
+                displayResponse(error.message, 'error');
             }
         }
 
@@ -283,12 +396,13 @@
             const processSelect = document.getElementById('processSelect').value;
             const processInput = document.getElementById('processInput').value;
             const processName = processSelect || processInput;
+            
             if (!processName) {
-                displayResponse({ status: 'error', message: 'Please select or enter a process name' });
+                displayResponse('Please select or enter a process name', 'error');
                 return;
             }
+            
             try {
-                console.log('Killing process:', processName);
                 const response = await fetch(`${API_URL}/kill_process`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -296,16 +410,16 @@
                     mode: 'cors'
                 });
                 const data = await response.json();
-                displayResponse(data);
+                displayResponse(data.message, data.status === 'success' ? 'success' : 'error');
             } catch (error) {
-                displayResponse({ status: 'error', message: error.message });
+                displayResponse(error.message, 'error');
             }
         }
 
         async function executeCommand() {
             const command = document.getElementById('cmdInput').value;
             if (!command) {
-                displayResponse({ status: 'error', message: 'Please enter a command' });
+                displayResponse('Please enter a command', 'error');
                 return;
             }
             
@@ -329,26 +443,29 @@
                         outputText += '\n\n' + data.error;
                     }
                     cmdOutput.textContent = outputText || 'Команда выполнена успешно (нет вывода)';
-                    displayResponse({ status: 'success', message: 'Command executed successfully' });
+                    displayResponse('Command executed successfully', 'success');
                 } else {
                     let errorText = data.error || '';
                     if (data.output && data.output.trim()) {
                         errorText = data.output + '\n\n' + errorText;
                     }
                     cmdOutput.textContent = errorText || 'Ошибка выполнения команды';
-                    displayResponse({ status: 'error', message: data.message });
+                    displayResponse(data.message, 'error');
                 }
+                
+                // Прокручиваем к выводу
+                cmdOutput.scrollIntoView({ behavior: 'smooth' });
             } catch (error) {
                 document.getElementById('cmdOutput').style.display = 'block';
                 document.getElementById('cmdOutput').textContent = 'Error: ' + error.message;
-                displayResponse({ status: 'error', message: error.message });
+                displayResponse(error.message, 'error');
             }
         }
 
-        function displayResponse(data) {
+        function displayResponse(message, status) {
             const responseDiv = document.getElementById('response');
-            responseDiv.textContent = data.message;
-            responseDiv.style.color = data.status === 'success' ? '#28a745' : '#dc3545';
+            responseDiv.textContent = message;
+            responseDiv.className = status; // 'success' или 'error'
         }
     </script>
 </body>
