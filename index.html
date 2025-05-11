@@ -98,11 +98,16 @@
     <script>
         const API_URL = 'https://game-bluebird-largely.ngrok-free.app';
 
-        // Загружаем список процессов при загрузке страницы
         window.onload = async () => {
             try {
-                const response = await fetch(`${API_URL}/list_processes`);
-                const data = await response.json();
+                console.log('Fetching processes from:', `${API_URL}/list_processes`);
+                const response = await fetch(`${API_URL}/list_processes`, {
+                    method: 'GET',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                const text = await response.text();
+                console.log('Raw response:', text);
+                const data = JSON.parse(text);
                 if (data.status === 'success') {
                     const processSelect = document.getElementById('processSelect');
                     data.processes.forEach(process => {
@@ -116,6 +121,7 @@
                 }
             } catch (error) {
                 displayResponse({ status: 'error', message: 'Failed to load processes: ' + error.message });
+                console.error('Error details:', error);
             }
         };
 
