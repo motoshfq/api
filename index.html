@@ -22,7 +22,7 @@
             border-radius: 15px;
             padding: 30px;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-            max-width: 400px;
+            max-width: 500px;
             width: 100%;
             color: #333;
         }
@@ -32,7 +32,7 @@
             margin-bottom: 20px;
             font-size: 24px;
         }
-        button, input, select {
+        button, input, select, textarea {
             width: 100%;
             padding: 12px;
             margin: 10px 0;
@@ -42,11 +42,16 @@
             box-sizing: border-box;
             transition: all 0.3s ease;
         }
-        input, select {
+        input, select, textarea {
             background: #f0f0f0;
             color: #333;
         }
-        input:focus, select:focus {
+        textarea {
+            min-height: 120px;
+            font-family: 'Consolas', monospace;
+            resize: vertical;
+        }
+        input:focus, select:focus, textarea:focus {
             outline: none;
             background: #e0e0e0;
         }
@@ -64,6 +69,32 @@
             text-align: center;
             font-size: 14px;
         }
+        .section {
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #ddd;
+        }
+        .section:last-child {
+            border-bottom: none;
+        }
+        .section-title {
+            font-size: 18px;
+            color: #444;
+            margin: 10px 0;
+        }
+        .cmd-output {
+            background-color: #000;
+            color: #0f0;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: 'Consolas', monospace;
+            max-height: 150px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+            margin-top: 10px;
+            display: none;
+        }
         @media (max-width: 500px) {
             .container {
                 padding: 20px;
@@ -71,7 +102,7 @@
             h1 {
                 font-size: 20px;
             }
-            button, input, select {
+            button, input, select, textarea {
                 font-size: 14px;
                 padding: 10px;
             }
@@ -81,17 +112,41 @@
 <body>
     <div class="container">
         <h1>PC Control Panel</h1>
-        <button onclick="sendCommand('shutdown')">Shutdown</button>
-        <button onclick="sendCommand('restart')">Restart</button>
-        <input id="appInput" type="text" placeholder="Enter app name (e.g., notepad)">
-        <button onclick="openApp()">Open App</button>
-        <input id="textInput" type="text" placeholder="Enter text to type">
-        <button onclick="typeText()">Type Text</button>
-        <select id="processSelect">
-            <option value="">Select a process to kill</option>
-        </select>
-        <input id="processInput" type="text" placeholder="Or enter process name (e.g., notepad.exe)">
-        <button onclick="killProcess()">Kill Process</button>
+        
+        <div class="section">
+            <div class="section-title">Power Management</div>
+            <button onclick="sendCommand('shutdown')">Shutdown</button>
+            <button onclick="sendCommand('restart')">Restart</button>
+        </div>
+        
+        <div class="section">
+            <div class="section-title">App Control</div>
+            <input id="appInput" type="text" placeholder="Enter app name (e.g., notepad)">
+            <button onclick="openApp()">Open App</button>
+        </div>
+        
+        <div class="section">
+            <div class="section-title">Text Input</div>
+            <input id="textInput" type="text" placeholder="Enter text to type">
+            <button onclick="typeText()">Type Text</button>
+        </div>
+        
+        <div class="section">
+            <div class="section-title">Process Control</div>
+            <select id="processSelect">
+                <option value="">Select a process to kill</option>
+            </select>
+            <input id="processInput" type="text" placeholder="Or enter process name (e.g., notepad.exe)">
+            <button onclick="killProcess()">Kill Process</button>
+        </div>
+        
+        <div class="section">
+            <div class="section-title">Command Prompt</div>
+            <textarea id="cmdInput" placeholder="Enter cmd command (e.g., dir, ipconfig, etc.)"></textarea>
+            <button onclick="executeCommand()">Execute Command</button>
+            <div id="cmdOutput" class="cmd-output"></div>
+        </div>
+        
         <div id="response"></div>
     </div>
 
@@ -243,6 +298,49 @@
                 const data = await response.json();
                 displayResponse(data);
             } catch (error) {
+                displayResponse({ status: 'error', message: error.message });
+            }
+        }
+
+        async function executeCommand() {
+            const command = document.getElementById('cmdInput').value;
+            if (!command) {
+                displayResponse({ status: 'error', message: 'Please enter a command' });
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_URL}/execute_cmd`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ command }),
+                    mode: 'cors'
+                });
+                
+                const data = await response.json();
+                
+                // Показываем вывод команды
+                const cmdOutput = document.getElementById('cmdOutput');
+                cmdOutput.style.display = 'block';
+                
+                if (data.status === 'success') {
+                    let outputText = data.output || '';
+                    if (data.error && data.error.trim()) {
+                        outputText += '\n\n' + data.error;
+                    }
+                    cmdOutput.textContent = outputText || 'Команда выполнена успешно (нет вывода)';
+                    displayResponse({ status: 'success', message: 'Command executed successfully' });
+                } else {
+                    let errorText = data.error || '';
+                    if (data.output && data.output.trim()) {
+                        errorText = data.output + '\n\n' + errorText;
+                    }
+                    cmdOutput.textContent = errorText || 'Ошибка выполнения команды';
+                    displayResponse({ status: 'error', message: data.message });
+                }
+            } catch (error) {
+                document.getElementById('cmdOutput').style.display = 'block';
+                document.getElementById('cmdOutput').textContent = 'Error: ' + error.message;
                 displayResponse({ status: 'error', message: error.message });
             }
         }
