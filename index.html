@@ -64,30 +64,6 @@
             text-align: center;
             font-size: 14px;
         }
-        .server-status {
-            text-align: center;
-            font-size: 12px;
-            margin-bottom: 15px;
-            padding: 5px;
-            border-radius: 5px;
-        }
-        .server-status.online {
-            background-color: #28a745;
-            color: white;
-        }
-        .server-status.offline {
-            background-color: #dc3545;
-            color: white;
-        }
-        .server-status.checking {
-            background-color: #ffc107;
-            color: black;
-        }
-        .settings {
-            margin-top: 20px;
-            padding-top: 15px;
-            border-top: 1px solid #ddd;
-        }
         @media (max-width: 500px) {
             .container {
                 padding: 20px;
@@ -105,8 +81,6 @@
 <body>
     <div class="container">
         <h1>PC Control Panel</h1>
-        <div id="serverStatus" class="server-status checking">Checking server status...</div>
-        
         <button onclick="sendCommand('shutdown')">Shutdown</button>
         <button onclick="sendCommand('restart')">Restart</button>
         <input id="appInput" type="text" placeholder="Enter app name (e.g., notepad)">
@@ -118,170 +92,99 @@
         </select>
         <input id="processInput" type="text" placeholder="Or enter process name (e.g., notepad.exe)">
         <button onclick="killProcess()">Kill Process</button>
-        <button onclick="refreshProcesses()">Refresh Process List</button>
         <div id="response"></div>
-        
-        <div class="settings">
-            <label for="serverUrl">Server URL:</label>
-            <input id="serverUrl" type="text" placeholder="Enter ngrok URL (e.g., https://123abc.ngrok.io)">
-            <button onclick="updateServerUrl()">Update Server URL</button>
-        </div>
     </div>
 
     <script>
-        let API_URL = '';
-        
-        // Попытка загрузить сохраненный URL из localStorage
-        window.onload = () => {
-            const savedUrl = localStorage.getItem('serverUrl');
-            if (savedUrl) {
-                document.getElementById('serverUrl').value = savedUrl;
-                API_URL = savedUrl;
-                checkServerStatus();
-            } else {
-                updateServerStatus('offline');
-                displayResponse({ status: 'info', message: 'Please enter your ngrok URL in settings to connect to the server' });
-            }
-        };
-        
-        // Функция для обновления URL сервера
-        function updateServerUrl() {
-            const newUrl = document.getElementById('serverUrl').value.trim();
-            if (!newUrl) {
-                displayResponse({ status: 'error', message: 'Please enter a valid URL' });
-                return;
-            }
-            
-            API_URL = newUrl;
-            localStorage.setItem('serverUrl', API_URL);
-            displayResponse({ status: 'info', message: 'Server URL updated. Checking connection...' });
-            checkServerStatus();
-        }
-        
-        // Функция для проверки статуса сервера
-        async function checkServerStatus() {
-            if (!API_URL) {
-                updateServerStatus('offline');
-                return;
-            }
-            
-            updateServerStatus('checking');
+        const API_URL = 'https://game-bluebird-largely.ngrok-free.app';
+
+        async function checkServer() {
             try {
+                console.log('Pinging server:', `${API_URL}/ping`);
                 const response = await fetch(`${API_URL}/ping`, {
                     method: 'GET',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
                     mode: 'cors'
                 });
-                
-                if (response.ok) {
-                    updateServerStatus('online');
-                    refreshProcesses();
-                } else {
-                    updateServerStatus('offline');
-                    displayResponse({ status: 'error', message: 'Server connection failed' });
+                console.log('Ping status:', response.status);
+                console.log('Ping headers:', [...response.headers.entries()]);
+                const text = await response.text();
+                console.log('Ping response (first 1000 chars):', text.substring(0, 1000));
+                if (!response.ok) {
+                    throw new Error(`Ping failed with status ${response.status}: ${text.substring(0, 200)}`);
                 }
+                const data = JSON.parse(text);
+                console.log('Ping result:', data);
+                return data.status === 'success';
             } catch (error) {
-                console.error('Error connecting to server:', error);
-                updateServerStatus('offline');
-                displayResponse({ status: 'error', message: 'Failed to connect to server: ' + error.message });
-            }
-        }
-        
-        // Обновление статуса сервера в UI
-        function updateServerStatus(status) {
-            const statusElement = document.getElementById('serverStatus');
-            statusElement.className = 'server-status ' + status;
-            
-            if (status === 'online') {
-                statusElement.textContent = 'Server Online ✅';
-            } else if (status === 'offline') {
-                statusElement.textContent = 'Server Offline ❌';
-            } else {
-                statusElement.textContent = 'Checking server status...';
+                console.error('Ping error:', error);
+                return false;
             }
         }
 
-        async function refreshProcesses() {
-            if (!API_URL) {
-                displayResponse({ status: 'error', message: 'Server URL not set' });
+        window.onload = async () => {
+            // Сначала проверяем сервер
+            const serverAlive = await checkServer();
+            if (!serverAlive) {
+                displayResponse({ status: 'error', message: 'Server connection failed' });
                 return;
             }
-            
+
             try {
-                displayResponse({ status: 'info', message: 'Loading processes...' });
                 console.log('Fetching processes from:', `${API_URL}/list_processes`);
                 const response = await fetch(`${API_URL}/list_processes`, {
                     method: 'GET',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
                     mode: 'cors'
                 });
-                
-                console.log('Response status:', response.status);
-                
+                console.log('List processes status:', response.status);
+                console.log('List processes headers:', [...response.headers.entries()]);
+                const text = await response.text();
+                console.log('List processes response (first 1000 chars):', text.substring(0, 1000));
                 if (!response.ok) {
-                    const errorText = await response.text();
-                    throw new Error(`HTTP error ${response.status}: ${errorText}`);
+                    throw new Error(`HTTP error ${response.status}: ${text.substring(0, 200)}`);
                 }
-                
-                const data = await response.json();
+                const data = JSON.parse(text);
                 if (data.status === 'success') {
                     const processSelect = document.getElementById('processSelect');
-                    // Очищаем текущие опции, оставляя только первую
-                    while (processSelect.options.length > 1) {
-                        processSelect.remove(1);
-                    }
-                    
                     data.processes.forEach(process => {
-                        if (process) { // Исключаем пустые имена
+                        if (process) {
                             const option = document.createElement('option');
                             option.value = process;
                             option.textContent = process;
                             processSelect.appendChild(option);
                         }
                     });
-                    displayResponse({ status: 'success', message: `${data.processes.length} processes loaded successfully` });
                 } else {
                     displayResponse({ status: 'error', message: data.message });
                 }
             } catch (error) {
                 displayResponse({ status: 'error', message: 'Failed to load processes: ' + error.message });
                 console.error('Error details:', error);
-                updateServerStatus('offline');
             }
-        }
+        };
 
         async function sendCommand(action) {
-            if (!API_URL) {
-                displayResponse({ status: 'error', message: 'Server URL not set' });
-                return;
-            }
-            
             try {
                 const response = await fetch(`${API_URL}/${action}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     mode: 'cors'
                 });
-                
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    throw new Error(`HTTP error ${response.status}: ${errorText}`);
-                }
-                
                 const data = await response.json();
                 displayResponse(data);
             } catch (error) {
                 displayResponse({ status: 'error', message: error.message });
-                updateServerStatus('offline');
             }
         }
 
         async function openApp() {
-            if (!API_URL) {
-                displayResponse({ status: 'error', message: 'Server URL not set' });
-                return;
-            }
-
             const appName = document.getElementById('appInput').value;
             if (!appName) {
                 displayResponse({ status: 'error', message: 'Please enter an app name' });
@@ -294,26 +197,14 @@
                     body: JSON.stringify({ app_name: appName }),
                     mode: 'cors'
                 });
-                
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    throw new Error(`HTTP error ${response.status}: ${errorText}`);
-                }
-                
                 const data = await response.json();
                 displayResponse(data);
             } catch (error) {
                 displayResponse({ status: 'error', message: error.message });
-                updateServerStatus('offline');
             }
         }
 
         async function typeText() {
-            if (!API_URL) {
-                displayResponse({ status: 'error', message: 'Server URL not set' });
-                return;
-            }
-
             const text = document.getElementById('textInput').value;
             if (!text) {
                 displayResponse({ status: 'error', message: 'Please enter text' });
@@ -326,26 +217,14 @@
                     body: JSON.stringify({ text }),
                     mode: 'cors'
                 });
-                
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    throw new Error(`HTTP error ${response.status}: ${errorText}`);
-                }
-                
                 const data = await response.json();
                 displayResponse(data);
             } catch (error) {
                 displayResponse({ status: 'error', message: error.message });
-                updateServerStatus('offline');
             }
         }
 
         async function killProcess() {
-            if (!API_URL) {
-                displayResponse({ status: 'error', message: 'Server URL not set' });
-                return;
-            }
-
             const processSelect = document.getElementById('processSelect').value;
             const processInput = document.getElementById('processInput').value;
             const processName = processSelect || processInput;
@@ -361,35 +240,17 @@
                     body: JSON.stringify({ process_name: processName }),
                     mode: 'cors'
                 });
-                
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    throw new Error(`HTTP error ${response.status}: ${errorText}`);
-                }
-                
                 const data = await response.json();
                 displayResponse(data);
-                // Обновляем список процессов после успешного завершения
-                if (data.status === 'success') {
-                    setTimeout(refreshProcesses, 1000);
-                }
             } catch (error) {
                 displayResponse({ status: 'error', message: error.message });
-                updateServerStatus('offline');
             }
         }
 
         function displayResponse(data) {
             const responseDiv = document.getElementById('response');
             responseDiv.textContent = data.message;
-            
-            if (data.status === 'success') {
-                responseDiv.style.color = '#28a745';
-            } else if (data.status === 'error') {
-                responseDiv.style.color = '#dc3545';
-            } else if (data.status === 'info') {
-                responseDiv.style.color = '#007bff';
-            }
+            responseDiv.style.color = data.status === 'success' ? '#28a745' : '#dc3545';
         }
     </script>
 </body>
